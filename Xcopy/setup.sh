@@ -78,8 +78,8 @@ sshpass -p "$PASSWORD" scp -P "$PORT" -o StrictHostKeyChecking=no \
 if [[ "$UPDATE" == "true" ]]; then
   echo "[+] Running UPDATE queries with newIp=${NEWIP} ..."
   sqlite3 "$LOCAL_FILE" <<SQL
-UPDATE settings SET value = '${NEWIP}' WHERE key = 'ip_address';
-UPDATE connections SET ip = '${NEWIP}' WHERE id = 1;
+UPDATE inbounds SET listen = '${NEWIP}' WHERE listen = '${HOST}';
+UPDATE inbounds SET tag = replace(tag, '${HOST}', '${NEWIP}');
 SQL
   echo "[✓] UPDATE statements executed."
 else
