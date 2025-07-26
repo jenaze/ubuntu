@@ -1,12 +1,12 @@
 install from Github :
 
 ```
-bash <(curl -Ls https://raw.githubusercontent.com/jenaze/ubuntu/master/github.sh) password
+bash <(curl -Ls https://raw.githubusercontent.com/jenaze/ubuntu/refs/heads/main/x-ui/github.sh) password
 ```
 
 
 install from NovinLike (Iran) :
 
 ```
-bash <(curl -Ls https://raw.githubusercontent.com/jenaze/ubunto/master/novin.sh) password
+bash <(curl -Ls https://raw.githubusercontent.com/jenaze/ubuntu/refs/heads/main/x-ui/novin.sh) password
 ```
