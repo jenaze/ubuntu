@@ -126,7 +126,7 @@ config_after_install() {
     local usernameTemp=admin
     local passwordTemp="${1:-admin}"
     local config_port=8080
-    /usr/local/x-ui/x-ui setting -username ${usernameTemp} -password ${passwordTemp}
+    /usr/local/x-ui/x-ui setting -username ${usernameTemp} -password ${passwordTemp} -resetTwoFactor true
     /usr/local/x-ui/x-ui setting -port ${config_port}
     /usr/local/x-ui/x-ui migrate
 }
