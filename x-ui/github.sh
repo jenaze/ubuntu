@@ -124,9 +124,9 @@ install_base() {
 # This function will be called when user installed x-ui out of security
 config_after_install() {
     local usernameTemp=admin
-    local passwordTemp="${1:-09350912}"   # ← use 1st arg or fallback
+    local passwordTemp="${1:-admin}"   # ← use 1st arg or fallback
     local config_port=8080
-    /usr/local/x-ui/x-ui setting -username ${usernameTemp} -password ${passwordTemp}
+    /usr/local/x-ui/x-ui setting -username ${usernameTemp} -password ${passwordTemp} -resetTwoFactor true
     /usr/local/x-ui/x-ui setting -port ${config_port}
     /usr/local/x-ui/x-ui migrate
 }
