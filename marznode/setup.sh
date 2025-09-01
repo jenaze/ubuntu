@@ -192,6 +192,7 @@ install_marznode() {
     
     # Start services
     echo -e "${YELLOW}Starting MarzNode services...${NC}"
+    cd $MARZNODE_DIR
     docker compose down 2>/dev/null || true
     docker compose up -d
     
