@@ -206,7 +206,7 @@ install_marznode() {
 }
 
 # Function to update Xray only
-update_xray() {
+update_xray_old() {
     echo -e "${BLUE}Updating Xray-core...${NC}"
     install_xray
     
@@ -217,7 +217,19 @@ update_xray() {
     
     echo -e "${GREEN}Xray update completed!${NC}"
 }
+update_xray() {
+    echo -e "${BLUE}Updating Xray-core...${NC}"
+    echo -e "${YELLOW}Stopping MarzNode service...${NC}"
+    cd $MARZNODE_DIR
+    docker compose down || true
 
+    install_xray
+    
+    echo -e "${YELLOW}Starting MarzNode service...${NC}"
+    docker compose up -d
+    
+    echo -e "${GREEN}Xray update completed!${NC}"
+}
 # Function to show status
 show_status() {
     echo -e "${BLUE}=== MarzNode Status ===${NC}"
