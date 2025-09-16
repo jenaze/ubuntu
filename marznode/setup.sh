@@ -206,7 +206,7 @@ install_marznode() {
 }
 
 # Function to update Xray only
-update_xray_old() {
+update_xray() {
     echo -e "${BLUE}Updating Xray-core...${NC}"
     install_xray
     
@@ -217,7 +217,7 @@ update_xray_old() {
     
     echo -e "${GREEN}Xray update completed!${NC}"
 }
-update_xray() {
+update_xray_new() {
     echo -e "${BLUE}Updating Xray-core...${NC}"
     echo -e "${YELLOW}Stopping MarzNode service...${NC}"
     cd $MARZNODE_DIR
