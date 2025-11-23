@@ -42,7 +42,7 @@ get_user_input() {
 
     # Get Service Name
     while true; do
-        read -p "Enter the systemd service name to monitor (e.g., backhaul.service): " SERVICE_NAME
+        read -p "Enter the systemd service name to monitor (e.g., iran123.service): " SERVICE_NAME
         if systemctl list-unit-files --type=service | grep -q "^${SERVICE_NAME}$"; then
             break
         else
