@@ -1,0 +1,180 @@
+{
+  "log": {
+    "loglevel": "warning"
+  },
+  "inbounds": [
+    {
+      "listen": "0.0.0.0",
+      "port": 1011,
+      "protocol": "vless",
+      "settings": {
+        "clients": [
+          {
+            "email": "user",
+            "flow": "",
+            "id": "xxxxxxxxxxxxxxxxx"
+          }
+        ],
+        "decryption": "none",
+        "fallbacks": []
+      },
+      "sniffing": {
+        "enabled": false
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "security": "none",
+        "sockopt": {
+          "V6Only": false,
+          "acceptProxyProtocol": false,
+          "dialerProxy": "",
+          "domainStrategy": "UseIP",
+          "interface": "",
+          "mark": 0,
+          "penetrate": false,
+          "tcpFastOpen": true,
+          "tcpKeepAliveIdle": 300,
+          "tcpKeepAliveInterval": 0,
+          "tcpMaxSeg": 1440,
+          "tcpMptcp": false,
+          "tcpUserTimeout": 10000,
+          "tcpWindowClamp": 600,
+          "tcpcongestion": "bbr",
+          "tproxy": "off"
+        },
+        "tcpSettings": {
+          "acceptProxyProtocol": false,
+          "header": {
+            "request": {
+              "headers": {},
+              "method": "GET",
+              "path": [
+                "/"
+              ],
+              "version": "1.1"
+            },
+            "response": {
+              "headers": {},
+              "reason": "OK",
+              "status": "200",
+              "version": "1.1"
+            },
+            "type": "http"
+          }
+        }
+      },
+      "tag": "myproxy"
+    }
+  ],
+  "outbounds": [
+    {
+      "protocol": "vless",
+      "settings": {
+        "vnext": [
+          {
+            "address": "warp.buyping.net",
+            "port": 55798,
+            "users": [
+              {
+                "encryption": "none",
+                "flow": "",
+                "id": "xxxxxxxxxxxxxxxxx"
+              }
+            ]
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "security": "none",
+        "tcpSettings": {
+          "header": {
+            "request": {
+              "headers": {
+                "Host": []
+              },
+              "path": [
+                "/"
+              ]
+            },
+            "type": "http"
+          }
+        }
+      },
+      "tag": "warp"
+    },
+    {
+      "protocol": "shadowsocks",
+      "settings": {
+        "servers": [
+          {
+            "address": "avito.fezu.podigi.rambler.tactics.goal-strategies.futbol",
+            "method": "chacha20-ietf-poly1305",
+            "password": "xxxxxxxxxxxx",
+            "port": 43157,
+            "uot": true
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "security": "none",
+        "tcpSettings": {
+          "header": {
+            "type": "none"
+          }
+        }
+      },
+      "tag": "AezaRussian"
+    },
+    {
+      "protocol": "freedom",
+      "settings": {}
+    }
+  ],
+  "routing": {
+    "domainStrategy": "AsIs",
+    "rules": [
+      {
+        "domain": [
+          "geosite:youtube"
+        ],
+        "outboundTag": "AezaRussian",
+        "type": "field"
+      },
+      {
+        "domain": [
+          "geosite:binance",
+          "geosite:spotify",
+          "geosite:apple",
+          "geosite:netflix",
+          "geosite:spotify",
+          "geosite:reddit",
+          "geosite:soundcloud",
+          "geosite:TIKTOK",
+          "geosite:google",
+          "geosite:openai"
+        ],
+        "outboundTag": "warp",
+        "type": "field"
+      },
+      {
+        "domain": [
+          "snapchat.com",
+          "web.dev.com",
+          "routenote.com",
+          "capcut.com",
+          "imgur.com",
+          "fburl.com",
+          "siliconflow.com",
+          "ticketsbot.net",
+          "make.com",
+          "remini.ai",
+          "sih.app"
+        ],
+        "outboundTag": "warp",
+        "type": "field"
+      }
+    ]
+  }
+}
