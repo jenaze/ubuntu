@@ -11,6 +11,7 @@
 #     ./install_xray.sh                  -> Installs the latest version.
 #     ./install_xray.sh install [vX.Y.Z] -> Installs a specific version (or latest if omitted).
 #     ./install_xray.sh update [vX.Y.Z]  -> Updates to a specific version (or latest if omitted).
+#     ./install_xray.sh uninstall        -> Completely removes Xray and its configuration.
 #     ./install_xray.sh --version        -> Checks the currently installed Xray version.
 #     ./install_xray.sh --help           -> Shows this help message.
 #
@@ -24,6 +25,7 @@ PATH_UNIT_NAME="xray.path"
 RESTART_SERVICE_NAME="xray-restarter.service"
 XRAY_BINARY="$INSTALL_DIR/xray"
 DEBUG_FILE="/tmp/xray_api_response.json"
+SERVICE_DROPIN_DIR="/etc/systemd/system/$SERVICE_NAME.d"
 
 # --- Use absolute paths for reliability ---
 CURL_CMD="/usr/bin/curl"
@@ -54,6 +56,7 @@ show_help() {
     echo "  (no args)      Install the latest version of Xray."
     echo "  install [ver]  Install a specific version (e.g., v1.8.4) or latest if omitted."
     echo "  update [ver]   Update to a specific version or latest if omitted."
+    echo "  uninstall      Completely remove Xray and its configuration."
     echo "  --version      Check the currently installed Xray version."
     echo "  --help         Show this help message."
     echo ""
@@ -62,6 +65,7 @@ show_help() {
     echo "  $0 install v1.8.4       # Install version v1.8.4"
     echo "  $0 update               # Update to latest"
     echo "  $0 update v1.8.6        # Update to version v1.8.6"
+    echo "  $0 uninstall            # Remove Xray"
 }
 
 ensure_dependencies_are_installed() {
@@ -158,7 +162,6 @@ get_latest_xray_version() {
 install_xray_binary() {
     local version=$1
     local arch=$(get_arch)
-    # --- CORRECTED: The version number is NOT in the zip file name ---
     local download_url="https://github.com/XTLS/Xray-core/releases/download/${version}/Xray-${arch}.zip"
     local zip_file="/tmp/xray-${version}.zip"
 
@@ -169,7 +172,6 @@ install_xray_binary() {
         exit 1
     fi
 
-    # --- Validate the downloaded file is a zip archive ---
     if ! "$FILE_CMD" "$zip_file" | grep -q "Zip archive"; then
         log_error "Downloaded file is not a valid zip archive. It might be an error page."
         log_error "File details: $("$FILE_CMD" "$zip_file")"
@@ -185,7 +187,6 @@ install_xray_binary() {
         exit 1
     fi
 
-    # --- SIMPLIFIED: The Xray zip file extracts files directly, not in a subfolder ---
     if ! "$UNZIP_CMD" -o "$zip_file" -d "$INSTALL_DIR"; then
         log_error "Failed to extract the Xray archive."
         rm -f "$zip_file"
@@ -240,6 +241,17 @@ RestartSec=10s
 [Install]
 WantedBy=multi-user.target
 EOF
+
+    log_info "Configuring log rotation for the service..."
+    sudo mkdir -p "$SERVICE_DROPIN_DIR"
+    sudo tee "$SERVICE_DROPIN_DIR/10-log-limit.conf" > /dev/null <<'EOF'
+[Service]
+# Limit the journal size for this service to prevent it from growing too large.
+# This value is the maximum disk space the journal for this service can use.
+# Adjust as needed (e.g., 10M, 100M). Default is 50M.
+LogMaxUse=50M
+EOF
+    log_success "Service log limit set to 50M."
 
     sudo tee "/etc/systemd/system/$RESTART_SERVICE_NAME" > /dev/null <<EOF
 [Unit]
@@ -320,6 +332,44 @@ update_action() {
     log_success "Xray has been successfully updated to $target_version."
 }
 
+uninstall_action() {
+    if [[ ! -f "$XRAY_BINARY" ]]; then
+        log_warning "Xray is not installed in $INSTALL_DIR. Nothing to uninstall."
+        exit 0
+    fi
+
+    log_warning "This will completely remove Xray and its configuration."
+    log_warning "The following will be deleted:"
+    log_warning "  - Service files: $SERVICE_NAME, $PATH_UNIT_NAME, $RESTART_SERVICE_NAME"
+    log_warning "  - Installation directory: $INSTALL_DIR"
+    read -p "Are you sure you want to continue? (y/N): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        log_info "Uninstallation aborted by user."
+        exit 0
+    fi
+
+    log_info "Stopping and disabling Xray services..."
+    sudo "$SYSTEMCTL_CMD" stop "$SERVICE_NAME" 2>/dev/null || true
+    sudo "$SYSTEMCTL_CMD" stop "$PATH_UNIT_NAME" 2>/dev/null || true
+    sudo "$SYSTEMCTL_CMD" disable "$SERVICE_NAME" 2>/dev/null || true
+    sudo "$SYSTEMCTL_CMD" disable "$PATH_UNIT_NAME" 2>/dev/null || true
+
+    log_info "Removing systemd service files..."
+    sudo rm -f "/etc/systemd/system/$SERVICE_NAME"
+    sudo rm -f "/etc/systemd/system/$RESTART_SERVICE_NAME"
+    sudo rm -f "/etc/systemd/system/$PATH_UNIT_NAME"
+    sudo rm -rf "$SERVICE_DROPIN_DIR"
+
+    log_info "Reloading systemd daemon..."
+    sudo "$SYSTEMCTL_CMD" daemon-reload
+
+    log_info "Removing Xray installation directory: $INSTALL_DIR"
+    rm -rf "$INSTALL_DIR"
+
+    log_success "Xray has been successfully uninstalled."
+}
+
 # --- Main Execution ---
 main() {
     case "$1" in
@@ -328,6 +378,9 @@ main() {
             ;;
         "update")
             update_action "$2"
+            ;;
+        "uninstall")
+            uninstall_action
             ;;
         "--version")
             if [[ -f "$XRAY_BINARY" ]]; then
@@ -350,17 +403,21 @@ main() {
             ;;
     esac
     
-    echo
-    log_success "Operation complete!"
-    echo "------------------------------------------------"
-    echo "Xray is running as a SOCKS5 proxy on port 1080."
-    echo "Configuration file: $CONFIG_FILE"
-    echo ""
-    echo "Useful commands:"
-    echo "  Check status:     $SYSTEMCTL_CMD status $SERVICE_NAME"
-    echo "  View logs:        journalctl -u $SERVICE_NAME -f"
-    echo "  Stop service:     sudo $SYSTEMCTL_CMD stop $SERVICE_NAME"
-    echo "------------------------------------------------"
+    # Only show the final success message for install/update operations
+    if [[ "$1" == "install" || "$1" == "update" || "$1" == "" ]]; then
+        echo
+        log_success "Operation complete!"
+        echo "------------------------------------------------"
+        echo "Xray is running as a SOCKS5 proxy on port 1080."
+        echo "Configuration file: $CONFIG_FILE"
+        echo "Service log limit: 50M (configured in $SERVICE_DROPIN_DIR/10-log-limit.conf)"
+        echo ""
+        echo "Useful commands:"
+        echo "  Check status:     $SYSTEMCTL_CMD status $SERVICE_NAME"
+        echo "  View logs:        journalctl -u $SERVICE_NAME -f"
+        echo "  Stop service:     sudo $SYSTEMCTL_CMD stop $SERVICE_NAME"
+        echo "------------------------------------------------"
+    fi
 }
 
 main "$@"
