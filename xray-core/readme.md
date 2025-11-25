@@ -3,7 +3,11 @@ install:
 ```
 bash <(curl -Ls https://raw.githubusercontent.com/jenaze/ubuntu/refs/heads/main/xray-core/setup.sh)
 ```
+xray-config:
 
+```
+wget https://raw.githubusercontent.com/jenaze/ubuntu/refs/heads/main/xray-core/xray_config.json
+```
 
 بررسی وضعیت سرویس:
 ```
