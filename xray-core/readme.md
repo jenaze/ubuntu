@@ -1,7 +1,7 @@
 install:
 
 ```
-bash <(curl -Ls https://raw.githubusercontent.com/jenaze/ubuntu/refs/heads/main/xray-core/setup.sh)
+bash <(curl -Ls https://raw.githubusercontent.com/jenaze/ubuntu/refs/heads/main/xray-core/setup.sh) --help
 ```
 xray-config:
 
