@@ -31,6 +31,23 @@ get_latest_xray_version() {
     echo -e "${GREEN}Latest Xray version: $LATEST_VERSION${NC}"
 }
 
+# Function to check if a specific Xray version exists
+check_xray_version_exists() {
+    local version=$1
+    echo -e "${BLUE}Checking if Xray version $version exists...${NC}"
+    
+    # Check if the version exists by attempting to fetch the release info
+    HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://api.github.com/repos/XTLS/Xray-core/releases/tags/$version)
+    
+    if [ "$HTTP_STATUS" = "200" ]; then
+        echo -e "${GREEN}Version $version exists!${NC}"
+        return 0
+    else
+        echo -e "${RED}Version $version does not exist!${NC}"
+        return 1
+    fi
+}
+
 # Function to get user configuration
 get_configuration() {
     echo -e "${BLUE}=== Configuration Setup ===${NC}"
@@ -83,9 +100,15 @@ edit_client_pem() {
 
 # Function to install/update Xray
 install_xray() {
+    local version=$1
     echo -e "${BLUE}Installing/Updating Xray-core...${NC}"
     
-    get_latest_xray_version
+    if [ -z "$version" ]; then
+        get_latest_xray_version
+        VERSION_TO_INSTALL=$LATEST_VERSION
+    else
+        VERSION_TO_INSTALL=$version
+    fi
     
     mkdir -p $DATA_DIR/data
     cd $DATA_DIR/data
@@ -93,9 +116,9 @@ install_xray() {
     # Remove existing Xray files
     rm -f xray Xray-*
     
-    # Download latest Xray release
-    echo -e "${YELLOW}Downloading Xray version $LATEST_VERSION...${NC}"
-    wget -q --show-progress https://github.com/XTLS/Xray-core/releases/download/${LATEST_VERSION}/Xray-linux-64.zip
+    # Download specified Xray release
+    echo -e "${YELLOW}Downloading Xray version $VERSION_TO_INSTALL...${NC}"
+    wget -q --show-progress https://github.com/XTLS/Xray-core/releases/download/${VERSION_TO_INSTALL}/Xray-linux-64.zip
     
     # Install unzip if not exists
     if ! command -v unzip &> /dev/null; then
@@ -110,7 +133,7 @@ install_xray() {
     cp xray $DATA_DIR/xray
     chmod +x $DATA_DIR/xray $DATA_DIR/data/xray
     
-    echo -e "${GREEN}Xray $LATEST_VERSION installed successfully!${NC}"
+    echo -e "${GREEN}Xray $VERSION_TO_INSTALL installed successfully!${NC}"
 }
 
 # Function to create docker compose file
@@ -119,24 +142,24 @@ create_docker_compose() {
     
     # Build environment variables section
     ENV_VARS="      SERVICE_PORT: \"$SERVICE_PORT\"
-      AUTH_GENERATION_ALGORITHM: \"plain\"
-      INSECURE: \"$INSECURE\"
-      XRAY_EXECUTABLE_PATH: \"/var/lib/marznode/xray\"
-      XRAY_ASSETS_PATH: \"/var/lib/marznode/data\"
-      XRAY_CONFIG_PATH: \"/var/lib/marznode/xray_config.json\"
-      XRAY_RESTART_ON_FAILURE: \"True\"
-      XRAY_RESTART_ON_FAILURE_INTERVAL: \"0\"
+       AUTH_GENERATION_ALGORITHM: \"plain\"
+       INSECURE: \"$INSECURE\"
+       XRAY_EXECUTABLE_PATH: \"/var/lib/marznode/xray\"
+       XRAY_ASSETS_PATH: \"/var/lib/marznode/data\"
+       XRAY_CONFIG_PATH: \"/var/lib/marznode/xray_config.json\"
+       XRAY_RESTART_ON_FAILURE: \"True\"
+       XRAY_RESTART_ON_FAILURE_INTERVAL: \"0\"
       
-      SING_BOX_EXECUTABLE_PATH: \"/usr/local/bin/sing-box\"
-      HYSTERIA_EXECUTABLE_PATH: \"/usr/local/bin/hysteria\"
-      SSL_CLIENT_CERT_FILE: \"/var/lib/marznode/client.pem\"
-      SSL_KEY_FILE: \"./server.key\"
-      SSL_CERT_FILE: \"./server.cert\""
+       SING_BOX_EXECUTABLE_PATH: \"/usr/local/bin/sing-box\"
+       HYSTERIA_EXECUTABLE_PATH: \"/usr/local/bin/hysteria\"
+       SSL_CLIENT_CERT_FILE: \"/var/lib/marznode/client.pem\"
+       SSL_KEY_FILE: \"./server.key\"
+       SSL_CERT_FILE: \"./server.cert\""
     
     # Add SERVICE_ADDRESS only if provided
     if [ ! -z "$SERVICE_ADDRESS" ]; then
         ENV_VARS="$ENV_VARS
-      SERVICE_ADDRESS: \"$SERVICE_ADDRESS\""
+       SERVICE_ADDRESS: \"$SERVICE_ADDRESS\""
     fi
 
     cat > $MARZNODE_DIR/compose.yml << EOF
@@ -148,7 +171,7 @@ services:
     command: [ "sh", "-c", "sleep 10 && python3 marznode.py" ]
 
     environment:
-$ENV_VARS
+ $ENV_VARS
 
     volumes:
       - /var/lib/marznode:/var/lib/marznode
@@ -166,9 +189,13 @@ install_marznode() {
     echo -e "${YELLOW}Updating system packages...${NC}"
     apt-get update -y && apt-get upgrade -y
     
-    # Install Docker
-    echo -e "${YELLOW}Installing Docker...${NC}"
-    curl -fsSL https://get.docker.com | sh
+    # Check and install Docker
+    if ! command -v docker &> /dev/null; then
+        echo -e "${YELLOW}Docker not found. Installing Docker...${NC}"
+        curl -fsSL https://get.docker.com | sh
+    else
+        echo -e "${GREEN}Docker is already installed. Skipping...${NC}"
+    fi
     
     # Clone MarzNode
     echo -e "${YELLOW}Cloning MarzNode repository...${NC}"
@@ -217,6 +244,36 @@ update_xray() {
     
     echo -e "${GREEN}Xray update completed!${NC}"
 }
+
+# Function to update Xray to a specific version
+update_xray_custom() {
+    echo -e "${BLUE}Update Xray to Custom Version${NC}"
+    echo -n -e "${YELLOW}Enter Xray version (e.g., v1.8.6): ${NC}"
+    read custom_version
+    
+    if [ -z "$custom_version" ]; then
+        echo -e "${RED}No version specified!${NC}"
+        return 1
+    fi
+    
+    # Check if the version exists
+    if check_xray_version_exists "$custom_version"; then
+        echo -e "${YELLOW}Stopping MarzNode service...${NC}"
+        cd $MARZNODE_DIR
+        docker compose down || true
+        
+        install_xray "$custom_version"
+        
+        echo -e "${YELLOW}Starting MarzNode service...${NC}"
+        docker compose up -d
+        
+        echo -e "${GREEN}Xray updated to version $custom_version successfully!${NC}"
+    else
+        echo -e "${RED}Failed to update Xray. Version $custom_version does not exist.${NC}"
+        echo -e "${YELLOW}You can check available versions at: https://github.com/XTLS/Xray-core/releases${NC}"
+    fi
+}
+
 update_xray_new() {
     echo -e "${BLUE}Updating Xray-core...${NC}"
     echo -e "${YELLOW}Stopping MarzNode service...${NC}"
@@ -230,6 +287,7 @@ update_xray_new() {
     
     echo -e "${GREEN}Xray update completed!${NC}"
 }
+
 # Function to show status
 show_status() {
     echo -e "${BLUE}=== MarzNode Status ===${NC}"
@@ -256,14 +314,15 @@ show_status() {
 show_menu() {
     echo -e "\n${BLUE}=== MarzNode Management Menu ===${NC}"
     echo -e "1) Install MarzNode (Full installation)"
-    echo -e "2) Update Xray-core only"
-    echo -e "3) Show status"
-    echo -e "4) Restart services"
-    echo -e "5) View logs"
-    echo -e "6) Check for Xray updates"
-    echo -e "7) Edit client.pem certificate"
-    echo -e "8) Exit"
-    echo -n -e "${YELLOW}Select an option [1-8]: ${NC}"
+    echo -e "2) Update Xray-core to latest version"
+    echo -e "3) Update Xray-core to custom version"
+    echo -e "4) Show status"
+    echo -e "5) Restart services"
+    echo -e "6) View logs"
+    echo -e "7) Check for Xray updates"
+    echo -e "8) Edit client.pem certificate"
+    echo -e "9) Exit"
+    echo -n -e "${YELLOW}Select an option [1-9]: ${NC}"
 }
 
 # Main script
@@ -279,31 +338,34 @@ while true; do
             update_xray
             ;;
         3)
-            show_status
+            update_xray_custom
             ;;
         4)
+            show_status
+            ;;
+        5)
             echo -e "${YELLOW}Restarting services...${NC}"
             cd $MARZNODE_DIR
             docker compose restart
             echo -e "${GREEN}Services restarted!${NC}"
             ;;
-        5)
+        6)
             echo -e "${YELLOW}Showing logs (Ctrl+C to exit)...${NC}"
             cd $MARZNODE_DIR
             docker compose logs -f
             ;;
-        6)
+        7)
             get_latest_xray_version
             ;;
-        7)
+        8)
             edit_client_pem
             ;;
-        8)
+        9)
             echo -e "${GREEN}Goodbye!${NC}"
             exit 0
             ;;
         *)
-            echo -e "${RED}Invalid option! Please choose 1-8.${NC}"
+            echo -e "${RED}Invalid option! Please choose 1-9.${NC}"
             ;;
     esac
     
