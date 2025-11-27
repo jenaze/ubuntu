@@ -55,7 +55,7 @@ echo
 
 # ---- Step 2: Get domain ----
 echo "[Step 2/6] Domain configuration"
-read -rp "Enter your main domain (example: panbehpanel.ir): " DOMAIN
+read -rp "Enter your main domain (example: bp.ir): " DOMAIN
 
 if [[ -z "$DOMAIN" ]]; then
   red "ERROR: Domain cannot be empty."
