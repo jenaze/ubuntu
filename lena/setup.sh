@@ -151,12 +151,10 @@ add_tunnel() {
         read -p "Enter Tunnel UDP Port [Default: $SUGGESTED_PORT]: " USER_PORT
         VXLAN_PORT=${USER_PORT:-$SUGGESTED_PORT}
 
-        # 2. Ask for Internal IP (New Feature)
+        # 2. Ask for Internal IP
         read -p "Enter Local VXLAN IP [Default: $SUGGESTED_IP]: " USER_IP
         LOCAL_INT_IP=${USER_IP:-$SUGGESTED_IP}
 
-        # Calculate Remote IP Target (Standard convention: .2)
-        # Note: If user changes subnet completely, this might need manual adjust but we assume standard usage.
         REMOTE_INT_IP="10.${VNI}.0.2"
         
         read -p "Do you want to forward ports via HAProxy? (y/n): " hap_opt
@@ -236,6 +234,10 @@ EOF
         regenerate_haproxy
         echo -e "${GREEN}[✓] HAProxy updated.${NC}"
     fi
+
+    # PAUSE ADDED HERE
+    echo ""
+    read -p "Press Enter to return to main menu..."
 }
 
 list_tunnels() {
@@ -282,7 +284,7 @@ Lena_menu() {
     check_dependencies
     clear
     echo "+-------------------------------------------------------------------------+"
-    echo -e "| ${GREEN}LENA MULTI-VXLAN MANAGER${NC} | Version : ${GREEN} 2.2.0${NC}"
+    echo -e "| ${GREEN}LENA MULTI-VXLAN MANAGER${NC} | Version : ${GREEN} 2.3.0${NC}"
     echo "+-------------------------------------------------------------------------+"
     echo -e "1- Add New Tunnel"
     echo -e "2- List Active Tunnels (Show IP & Ports)"
