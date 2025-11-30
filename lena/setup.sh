@@ -143,6 +143,7 @@ add_tunnel() {
         
         VNI=$(get_next_vni)
         SUGGESTED_PORT=$((4790 + VNI))
+        SUGGESTED_IP="10.${VNI}.0.1/24"
         
         echo -e "${GREEN}[*] Generated Tunnel ID (VNI): ${VNI}${NC}"
         
@@ -150,7 +151,12 @@ add_tunnel() {
         read -p "Enter Tunnel UDP Port [Default: $SUGGESTED_PORT]: " USER_PORT
         VXLAN_PORT=${USER_PORT:-$SUGGESTED_PORT}
 
-        LOCAL_INT_IP="10.${VNI}.0.1/24"
+        # 2. Ask for Internal IP (New Feature)
+        read -p "Enter Local VXLAN IP [Default: $SUGGESTED_IP]: " USER_IP
+        LOCAL_INT_IP=${USER_IP:-$SUGGESTED_IP}
+
+        # Calculate Remote IP Target (Standard convention: .2)
+        # Note: If user changes subnet completely, this might need manual adjust but we assume standard usage.
         REMOTE_INT_IP="10.${VNI}.0.2"
         
         read -p "Do you want to forward ports via HAProxy? (y/n): " hap_opt
@@ -177,11 +183,12 @@ EOF
         echo -e "   YOUR LOCAL VXLAN IP: ${GREEN}${LOCAL_INT_IP}${NC}"
         echo -e "${CYAN}------------------------------------------------${NC}"
         echo -e "${YELLOW}!!! INSTRUCTIONS FOR REMOTE SERVER !!!${NC}"
-        echo -e "Go to your REMOTE server -> Select Option 1 -> Option 2."
+        echo -e "Go to your REMOTE server -> Option 1 -> Option 2."
         echo -e "Enter these details:"
         echo -e "  - Master IP:   ${GREEN}${MAIN_IP}${NC}"
         echo -e "  - Tunnel ID:   ${GREEN}${VNI}${NC}"
         echo -e "  - Tunnel Port: ${GREEN}${VXLAN_PORT}${NC}"
+        echo -e "  - Local IP:    ${GREEN}10.${VNI}.0.2/24${NC} (Default)"
         echo -e "${CYAN}------------------------------------------------${NC}"
         
     elif [[ "$role" == "2" ]]; then
@@ -192,7 +199,12 @@ EOF
         
         if [[ -z "$VNI" || -z "$VXLAN_PORT" ]]; then echo "Error: ID and Port required."; return; fi
         
-        LOCAL_INT_IP="10.${VNI}.0.2/24"
+        SUGGESTED_IP="10.${VNI}.0.2/24"
+        
+        # Ask for Internal IP
+        read -p "Enter Local VXLAN IP [Default: $SUGGESTED_IP]: " USER_IP
+        LOCAL_INT_IP=${USER_IP:-$SUGGESTED_IP}
+        
         REMOTE_INT_IP="10.${VNI}.0.1" 
         
         # Write Config
@@ -270,7 +282,7 @@ Lena_menu() {
     check_dependencies
     clear
     echo "+-------------------------------------------------------------------------+"
-    echo -e "| ${GREEN}LENA MULTI-VXLAN MANAGER${NC} | Version : ${GREEN} 2.1.0${NC}"
+    echo -e "| ${GREEN}LENA MULTI-VXLAN MANAGER${NC} | Version : ${GREEN} 2.2.0${NC}"
     echo "+-------------------------------------------------------------------------+"
     echo -e "1- Add New Tunnel"
     echo -e "2- List Active Tunnels (Show IP & Ports)"
