@@ -6,7 +6,7 @@ bash <(curl -s https://raw.githubusercontent.com/jenaze/ubuntu/refs/heads/main/l
 optimize Linux Network V3 :
 
 ```
-bash <(curl -s https://raw.githubusercontent.com/jenaze/ubuntu/refs/heads/main/linux/optimize3.sh)
+bash <(curl -s https://raw.githubusercontent.com/jenaze/ubuntu/refs/heads/main/linux/optimize2.sh)
 ```
 optimize Linux Network :
 
