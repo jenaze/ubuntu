@@ -3,7 +3,11 @@ change and Enable Root Password :
 ```
 bash <(curl -s https://raw.githubusercontent.com/jenaze/ubuntu/refs/heads/main/linux/rootlogin.sh) yoursecurepassword
 ```
+optimize Linux Network V3 :
 
+```
+bash <(curl -s https://raw.githubusercontent.com/jenaze/ubuntu/refs/heads/main/linux/optimize3.sh)
+```
 optimize Linux Network :
 
 ```
