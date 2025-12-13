@@ -233,14 +233,21 @@ install_marznode() {
 }
 
 # Function to update Xray only
+# UPDATED: Now stops the service first to avoid "Text file busy" error
 update_xray() {
     echo -e "${BLUE}Updating Xray-core...${NC}"
+    
+    echo -e "${YELLOW}Stopping MarzNode service to release file lock...${NC}"
+    cd $MARZNODE_DIR
+    docker compose down || true
+    
+    # Now it is safe to copy the file
     install_xray
     
     # Restart MarzNode to apply changes
-    echo -e "${YELLOW}Restarting MarzNode service...${NC}"
+    echo -e "${YELLOW}Starting MarzNode service...${NC}"
     cd $MARZNODE_DIR
-    docker compose restart
+    docker compose up -d
     
     echo -e "${GREEN}Xray update completed!${NC}"
 }
@@ -272,20 +279,6 @@ update_xray_custom() {
         echo -e "${RED}Failed to update Xray. Version $custom_version does not exist.${NC}"
         echo -e "${YELLOW}You can check available versions at: https://github.com/XTLS/Xray-core/releases${NC}"
     fi
-}
-
-update_xray_new() {
-    echo -e "${BLUE}Updating Xray-core...${NC}"
-    echo -e "${YELLOW}Stopping MarzNode service...${NC}"
-    cd $MARZNODE_DIR
-    docker compose down || true
-
-    install_xray
-    
-    echo -e "${YELLOW}Starting MarzNode service...${NC}"
-    docker compose up -d
-    
-    echo -e "${GREEN}Xray update completed!${NC}"
 }
 
 # Function to show status
