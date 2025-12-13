@@ -305,7 +305,7 @@ show_status() {
 
 # Function to show menu
 show_menu() {
-    echo -e "\n${BLUE}=== MarzNode Management Menu ===${NC}"
+    echo -e "\n${BLUE}=== MarzNode Management Menu v1 ===${NC}"
     echo -e "1) Install MarzNode (Full installation)"
     echo -e "2) Update Xray-core to latest version"
     echo -e "3) Update Xray-core to custom version"
