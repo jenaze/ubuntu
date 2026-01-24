@@ -1,7 +1,7 @@
 install from Github :
 
 ```
-bash <(curl -Ls https://raw.githubusercontent.com/jenaze/ubuntu/refs/heads/main/x-ui/github.sh) password
+bash <(curl -Ls https://raw.githubusercontent.com/jenaze/ubuntu/refs/heads/main/x-ui/github.sh) password |Version|
 ```
 
 
