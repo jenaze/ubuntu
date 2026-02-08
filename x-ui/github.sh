@@ -306,16 +306,28 @@ install_base
 # Step 2: Install X-UI (Pass args down)
 install_x-ui "$ARG_PASSWORD" "$ARG_VERSION"
 
-# Step 3: Enable BBR
-enable_bbr
+# Step 4: Optimization Question (اضافه شده)
+echo -e "${yellow}------------------------------------------${plain}"
+read -rp "Do you want to Enable BBr? [y/n] " confirm_bbr
+if [[ "$confirm_bbr" == "y" || "$confirm_bbr" == "Y" ]]; then
+    enable_bbr
+else
+    echo -e "${blue}System bbr skipped.${plain}"
+fi
 
-# Step 4: Optimize System
-optimizing_system
+# Step 4: Optimization Question (اضافه شده)
+echo -e "${yellow}------------------------------------------${plain}"
+read -rp "Do you want to apply System Optimizations (TCP, ulimit, etc.)? [y/n] " confirm_opt
+if [[ "$confirm_opt" == "y" || "$confirm_opt" == "Y" ]]; then
+    optimizing_system
+else
+    echo -e "${blue}System Optimization skipped.${plain}"
+fi
 
 # Step 5: Final Prompt
 echo -e ""
 echo -e "${green}Installation Completed!${plain}"
-echo -e "${yellow}Please Reboot your VPS to apply all system optimizations.${plain}"
+echo -e "${yellow}Please Reboot your VPS to apply all system changes.${plain}"
 read -rp "Reboot now? [y/n] " confirm_reboot
 if [[ "$confirm_reboot" == "y" || "$confirm_reboot" == "Y" ]]; then
     reboot
