@@ -24,7 +24,7 @@
 
 **۱. دانلود اسکریپت:**
 ```
-wget -O iperf3_tester.py (https://raw.githubusercontent.com/jenaze/ubuntu/refs/heads/main/iperf/iperf3_tester.py))
+wget -O iperf3_tester.py https://raw.githubusercontent.com/jenaze/ubuntu/refs/heads/main/iperf/iperf3_tester.py
 chmod +x iperf3_tester.py
 ```
 
