@@ -6,5 +6,5 @@ sudo wget -O /usr/local/bin/DaggerConnect https://raw.githubusercontent.com/jena
 
 Install nodelay
 ```
-sudo wget -O /usr/local/bin/DaggerConnect https://raw.githubusercontent.com/jenaze/ubuntu/main/mtn/nodelay && sudo chmod +x /usr/local/bin/nodelay
+sudo wget -O /usr/local/bin/nodelay https://raw.githubusercontent.com/jenaze/ubuntu/main/mtn/nodelay && sudo chmod +x /usr/local/bin/nodelay
 ```
