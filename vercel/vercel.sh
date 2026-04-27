@@ -4,14 +4,27 @@ echo -e "\e[36m====================================================\e[0m"
 echo -e "\e[36m          Vercel XHTTP - Auto Deployer              \e[0m"
 echo -e "\e[36m====================================================\e[0m"
 
-# ۱. دریافت اطلاعات
-read -p "Enter Backend Xray URL (e.g., https://xray.domain.com:2096): " TARGET_URL
+# ۱. دریافت اطلاعات (از پارامترهای ورودی یا پرسش از کاربر)
+TARGET_URL=$1
+RAW_PROJECT_NAME=$2
+
+# اگر آدرس مقصد (پارامتر اول) خالی بود بپرس
 if [ -z "$TARGET_URL" ]; then
-    echo -e "\e[31mKhata: Adrese maghsad nemitavanad khali bashad.\e[0m"
-    exit 1
+    read -p "Enter Backend Xray URL (e.g., https://xray.domain.com:2096): " TARGET_URL
+    if [ -z "$TARGET_URL" ]; then
+        echo -e "\e[31mKhata: Adrese maghsad nemitavanad khali bashad.\e[0m"
+        exit 1
+    fi
+else
+    echo -e "\e[32m[+] Target URL: $TARGET_URL\e[0m"
 fi
 
-read -p "Enter Project Name (e.g., my-custom-relay): " RAW_PROJECT_NAME
+# اگر نام پروژه (پارامتر دوم) خالی بود بپرس
+if [ -z "$RAW_PROJECT_NAME" ]; then
+    read -p "Enter Project Name (e.g., my-custom-relay): " RAW_PROJECT_NAME
+fi
+
+# پردازش نام پروژه
 if [ -z "$RAW_PROJECT_NAME" ]; then
     PROJECT_NAME="vercel-xhttp-relay"
     echo -e "\e[33m[!] Nami vared nashod. Estefadeh az name pishfarz: $PROJECT_NAME\e[0m"
@@ -96,25 +109,30 @@ cd $PROJECT_DIR
 # ۶. پیکربندی و استقرار روی Vercel به صورت قطعی
 echo -e "\e[33m\n[+] Deploying to Vercel and injecting variables...\e[0m"
 
-# لینک کردن اولیه به اکانت ورسل (ایجاد فایل .vercel)
+# لینک کردن اولیه به اکانت ورسل
 vercel link --yes
 
-# حذف متغیر قبلی در صورت وجود (برای جلوگیری از تداخل هنگام اجرای مجدد اسکریپت)
+# حذف متغیر قبلی در صورت وجود (برای جلوگیری از تداخل)
 vercel env rm TARGET_DOMAIN --yes 2>/dev/null || true
 
 # ثبت متغیر در تنظیمات پروژه بدون نیاز به دخالت کاربر
 echo -n "$TARGET_URL" | vercel env add TARGET_DOMAIN production
 
-# آپلود نهایی + تزریق مستقیم متغیر محیطی به اجرای فعلی برای اطمینان صد در صدی
+# آپلود نهایی + تزریق مستقیم متغیر محیطی
 DEPLOY_URL=$(vercel --prod --env TARGET_DOMAIN="$TARGET_URL" --yes)
+
+# ساخت نام دامنه اصلی (Main Domain) و حذف https:// از لینک Deployment
+MAIN_DOMAIN="${PROJECT_NAME}.vercel.app"
+DEPLOY_DOMAIN=$(echo "$DEPLOY_URL" | awk -F/ '{print $3}')
 
 echo -e "\e[32m\n====================================================\e[0m"
 echo -e "\e[32m            ✅ Esteghrar ba movafaghiyat anjam shod!             \e[0m"
 echo -e "\e[32m====================================================\e[0m"
-echo -e "📌 Vercel URL: \e[36m$DEPLOY_URL\e[0m"
-echo -e "📌 Target Backend: \e[33m$TARGET_URL\e[0m"
+echo -e "📌 Main Domain (Host/SNI): \e[36m$MAIN_DOMAIN\e[0m"
+echo -e "📌 Deployment URL (Temp):  \e[90m$DEPLOY_DOMAIN\e[0m"
+echo -e "📌 Target Backend:         \e[33m$TARGET_URL\e[0m"
 echo -e "----------------------------------------------------"
-echo -e "\e[33mHala mitavanid adrese Vercel bala ra dar bakhshe 'host' client khod gharar dahid.\e[0m"
+echo -e "\e[33mHala mitavanid adrese '$MAIN_DOMAIN' ra dar bakhshe 'host' va 'sni' client khod gharar dahid.\e[0m"
 echo -e "\e[32m====================================================\e[0m"
 
 # ۷. خروج و پاکسازی
